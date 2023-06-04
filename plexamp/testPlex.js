@@ -65,6 +65,8 @@ plexBackend.httpPing(process.env.LIBRARYNAME, process.env.HOSTNAME, process.env.
                         }
                         var filteredMusicLibrary = libraries.filter((library) => library.libraryTitle === 'Music' && library.name === process.env.LIBRARYNAME);
 
+                        console.log("Test library key: " + filteredMusicLibrary[0].key);
+
                         try {
                             doAllMusicQueryTests(filteredMusicLibrary[0].key);
                         } catch (Err) {
@@ -86,18 +88,17 @@ plexBackend.httpPing(process.env.LIBRARYNAME, process.env.HOSTNAME, process.env.
 
 function doAllMusicQueryTests(musicSectionKey) {
 
-    /*
     plexBackend.getAlbumsFirstLetters(musicSectionKey).then((results) => {
-        console.log(JSON.stringify(results));
+        console.log("ALBUM FIRST LETTERS: " + JSON.stringify(results));
     });
 
     plexBackend.getAlbumsFirstLetters(musicSectionKey, "S").then((results) => {
         for (const album of results) {
-            console.log("Playlist Title [" + album.title + "] key: [ " + album.key + " ] Total Tracks:[ " + album.size + " ]");
+            console.log("Playlist Title [" + album.title + "] key: [ " + album.key + " ] Total Tracks:[ " + album.leafCount + " ]");
         }
     });
-    */
-    var albumKey = "249959";
+
+    var albumKey = "29606";
     plexBackend.getAlbumRelated(albumKey).then((albumTracks) => {
         console.log("Related:" + JSON.stringify(albumTracks));
         var similarAlbums = filterMetadataFromHub(albumTracks.Hub, "hub.external.album.similar.sonically");
@@ -251,7 +252,9 @@ function doAllMusicQueryTests(musicSectionKey) {
         console.log(artist);
     });
     */
+    console.log('PRE-ALBUM');
     plexBackend.getAlbum("249959").then(function(album) {
+        console.log('ALBUM');
         console.log(album);
     });
     /*
@@ -278,7 +281,7 @@ function doAllMusicQueryTests(musicSectionKey) {
     });
     plexBackend.getListOfRecentAddedArtists(musicSectionKey).then((results) => {
         for (const artist of results) {
-            console.log("Music Section Artist [" + artist.title + "] key: [ " + album.key + " ]");
+            console.log("Music Section Artist [" + artist.title + "] key: [ " + artist.key + " ]");
         }
     });
     plexBackend.getListOfRecentPlayedArtists(musicSectionKey).then((results) => {

@@ -4,7 +4,7 @@
 	"description": "Provides a plugin to link your Plex account with Volumio providing Volumio wit Plex Music and support for headless PlexAmp",
 	"main": "index.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "jest"
 	},
 	"author": "jerome",
 	"license": "ISC",
@@ -39,5 +39,9 @@
 		"unirest": "^0.6.0",
 		"uuid": "^9.0.0",
 		"v-conf": "^1.4.2"
+	},
+	"devDependencies": {
+		"jest": "^29.5.0",
+		"mock-http-server": "^1.4.5"
 	}
 }

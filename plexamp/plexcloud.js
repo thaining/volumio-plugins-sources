@@ -18,7 +18,27 @@ var Plexcloud = function(options)
     if (!(this instanceof Plexcloud))
         return new Plexcloud(options);
 
+    this.PlexcloudServer = "plex.tv";
+    this.PlexcloudPort = "443";
+    this.PlexcloudProtocol = "https";
+
+    this.configureURI(options);
     this.headers = this.getHeaders(options || {});
+};
+
+Plexcloud.prototype.configureURI = function(options)
+{
+    if (options.hasOwnProperty('server')) {
+        this.PlexcloudServer = options.server;
+    }
+
+    if (options.hasOwnProperty('port')) {
+        this.PlexcloudPort = options.port;
+    }
+
+    if (options.hasOwnProperty('protocol')) {
+        this.PlexcloudProtocol = options.protocol;
+    }
 };
 
 Plexcloud.prototype.getHeaders = function(options)
@@ -33,10 +53,9 @@ Plexcloud.prototype.getHeaders = function(options)
             headers[key] = val;
     }
 
-    headers['X-Plex-Provides'] = 'controller'
+    headers['X-Plex-Provides'] = 'controller';
     return headers;
 };
-
 
 function resourceConnectionFilter(json) {
 
@@ -66,6 +85,14 @@ function resourceConnectionFilter(json) {
     return results;
 }
 
+Plexcloud.prototype.BuildPlexCloudURI = function(path) {
+
+    var skipPort = ((this.PlexcloudProtocol == 'https' && this.PlexcloudPort == '443') ||
+                    (this.PlexcloudProtocol == 'http' && this.PlexcloudPort == '80'));
+    return skipPort ? `${this.PlexcloudProtocol}://${this.PlexcloudServer}${path}` :
+        `${this.PlexcloudProtocol}://${this.PlexcloudServer}:${this.PlexcloudPort}${path}`;
+}
+
 Plexcloud.prototype.getServers = function(token, resolve, reject)
 {
     if (token === undefined) {
@@ -74,7 +101,7 @@ Plexcloud.prototype.getServers = function(token, resolve, reject)
 
     this.headers["X-Plex-token"] = token;
 
-    return request.get({url: 'https://plex.tv/pms/resources', headers: this.headers})
+    return request.get({url: this.BuildPlexCloudURI('/pms/resources'), headers: this.headers})
         .then(function(xml) {
             parseString(xml, function (err, json) {
                 resolve(resourceConnectionFilter(json));
@@ -93,7 +120,7 @@ Plexcloud.prototype.getClaimToken = function(token, resolve, reject)
 
     this.headers["X-Plex-token"] = token;
 
-    return request.get({url: 'https://plex.tv/api/claim/token.json', headers: this.headers})
+    return request.get({url: this.BuildPlexCloudURI('/api/claim/token.json'), headers: this.headers})
         .then(function(json) {
             resolve(json);
         })

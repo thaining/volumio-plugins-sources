@@ -33,8 +33,33 @@ var PlexPinAuth = function(options)
     if (!(this instanceof PlexPinAuth))
         return new PlexPinAuth(options);
 
+    this.PlexPinServer = "plex.tv";
+    this.PlexPinPort = "443";
+    this.PlexPinProtocol = "https";
+    this.PlexPinTimeout = 5000;
+    this.configureURI(options);
+
     this.headers = this.getHeaders(options || {});
     this.tokens = {};
+};
+
+PlexPinAuth.prototype.configureURI = function(options)
+{
+    if (options.hasOwnProperty('server')) {
+        this.PlexPinServer = options.server;
+    }
+
+    if (options.hasOwnProperty('port')) {
+        this.PlexPinPort = options.port;
+    }
+
+    if (options.hasOwnProperty('protocol')) {
+        this.PlexPinProtocol = options.protocol;
+    }
+
+    if (options.hasOwnProperty('timeout')) {
+        this.PlexPinTimeout = options.timeout;
+    }
 };
 
 /**
@@ -59,6 +84,16 @@ PlexPinAuth.prototype.getHeaders = function(options)
     return headers;
 };
 
+
+PlexPinAuth.prototype.BuildPlexCloudURI = function(path) {
+
+    var skipPort = ((this.PlexPinProtocol == 'https' && this.PlexPinPort == '443') ||
+                    (this.PlexPinProtocol == 'http' && this.PlexPinPort == '80'));
+    return skipPort ? `${this.PlexPinProtocol}://${this.PlexPinServer}${path}` :
+        `${this.PlexPinProtocol}://${this.PlexPinServer}:${this.PlexPinPort}${path}`;
+}
+
+
 /**
  * This function requests a new pin.
  *
@@ -70,10 +105,11 @@ PlexPinAuth.prototype.getPin = function()
     var defer = libQ.defer();
 
     request.post({
-            url: 'https://plex.tv/pins.xml',
-            headers: this.headers
+            url: this.BuildPlexCloudURI('/pins.xml'),
+            headers: this.headers,
+            timeout: this.PlexPinTimeout
             })
-            .then(res => {
+        .then(res => {
                 let response;
                 try {
                     response = xml.parse(res);
@@ -82,7 +118,7 @@ PlexPinAuth.prototype.getPin = function()
                     defer.reject(err);
                 }
         })
-        .catch(err => { return defer.reject(err); });
+        .catch(err => { defer.reject(err); });
 
     return defer.promise;
 };
@@ -110,10 +146,11 @@ PlexPinAuth.prototype.getToken = function(pin)
 
     // no cache, thus retrieve online
     request.get({
-        url: 'https://plex.tv/pins/' + pin + '.xml',
-        headers: this.headers
+            url: this.BuildPlexCloudURI('/pins/' + pin + '.xml'),
+            headers: this.headers,
+            timeout: this.PlexPinTimeout
     })
-    .then(res => {
+        .then(res => {
             let response;
             try {
                 response = xml.parse(res);

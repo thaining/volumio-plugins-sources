@@ -219,7 +219,7 @@ ControllerPlexAmp.prototype.getPinAndUpdateConfig = function(data) {
                     let ping = setTimeout(function pollToken() {
                         self.plexPin.getToken(pin.id)
                             .then((res) => self.detectAndSavePlexToken(res))
-                            .fail((res, err) => {
+                            .fail((res) => {
                                 var errorDefer = libQ.defer();
 
                                 // different token error cases in getToken()
@@ -229,15 +229,15 @@ ControllerPlexAmp.prototype.getPinAndUpdateConfig = function(data) {
                                 //    failed (error out)
                                 if (res && res.hasOwnProperty('token') && res.token === false) {
                                     self.logger.info('PlexAmp: Timeout! no Token');
-                                    defer.reject("PlexAmp - Timeouted out waiting for token");
+                                    defer.reject("PlexAmp - Token is expired");
                                 } else if (res && res.hasOwnProperty('token') && res.token === null) {
                                     ping = setTimeout(pollToken, 1000);
-                                } else if (res) {
-                                    self.logger.error(JSON.stringify(res));
+                                } else if (res instanceof Error) {
+                                    self.logger.info(res);
+                                    defer.reject("PlexAmp: Error " + res);
+                                } else {
+                                    self.logger.info(JSON.stringify(res));
                                     defer.reject("PlexAmp: Error " + JSON.stringify(res));
-                                } else if (err) {
-                                    self.logger.error(err);
-                                    defer.reject("PlexAmp: Error " + err);
                                 }
 
                                 errorDefer.reject(); // errors stop here
@@ -250,8 +250,7 @@ ControllerPlexAmp.prototype.getPinAndUpdateConfig = function(data) {
                     }, 2000); // end of 'ping = setTimeout(function pollToken()'
                 })
                 .fail(function(err) {  // when getPin() fails
-                    self.logger.error(err.message);
-                    defer.reject("PlexAmp: Error" + error);
+                    defer.reject("PlexAmp: Error" + err);
                 });
 
         })
@@ -274,11 +273,7 @@ ControllerPlexAmp.prototype.detectAndSavePlexToken = function(res) {
         self.config.save();
         defer.resolve(token);
     } else {
-        if (res instanceof Error) {
-            defer.reject(null, res);
-        } else {
-            defer.reject(res, null);
-        }
+        defer.reject(res);
     }
 
     return defer.promise;
@@ -321,6 +316,7 @@ ControllerPlexAmp.prototype.pingServerAndConnect = function (token, uiconf, defe
                         defer.resolve(uiconf);
                     }).fail(function (error) {
                         self.logger.info("PlexAmp::Plex failed to get a Music server key");
+                        defer.reject("PlexAmp::Plex failed to get a Music server key");
                     });
                 }).fail(function (error) {
                     self.logger.info("PlexAmp::Plex failed to connect - missing Token?");
@@ -328,6 +324,9 @@ ControllerPlexAmp.prototype.pingServerAndConnect = function (token, uiconf, defe
                 });
             }
         });
+    })
+    .fail((err) => {
+        defer.reject("PlexAmp: get plex server failure " + err);
     });
 }
 
