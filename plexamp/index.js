@@ -1708,54 +1708,66 @@ ControllerPlexAmp.prototype.search = function (query) {
     var answer = [];
     var limit = self.config.get("recentAddedLimit") || 100;
     const musicSectionKey = self.config.get('key');
-    self.plex.searchForArtists(musicSectionKey, query.value, limit).then(function(artistsResults) {
-        var artists = [];
+    const uri_query_value = encodeURIComponent(query.value);
+    self.plex.searchForArtists(musicSectionKey, uri_query_value, limit).then(function(artistsResults) {
 
-        artistsResults.forEach(function (artist) {
-            artists.push(self._formatArtist(artist, "plexamp/artist"));
-        });
+        if (!(artistsResults.hasOwnProperty("size") && artistsResults.size == 0)) {
+            var artists = [];
 
-        answer.push({
-            title: self.commandRouter.getI18nString('ARTISTS'),
-            icon: 'fa fa-microphone',
-            availableListViews: [
-                "list",
-                "grid"
-            ],
-            items: artists
-        });
-
-        self.plex.searchForAlbums(musicSectionKey, query.value, limit).then(function(albumsResults) {
-            var albums = [];
-
-            albumsResults.forEach(function (album) {
-                albums.push(self._formatAlbum(album, "plexamp/album"));
+            artistsResults.forEach(function (artist) {
+                artists.push(self._formatArtist(artist, "plexamp/artists"));
             });
+
             answer.push({
-                title: self.commandRouter.getI18nString('ALBUMS'),
-                icon: 'fa fa-play',
+                title: self.commandRouter.getI18nString('ARTISTS'),
+                icon: 'fa fa-microphone',
                 availableListViews: [
                     "list",
                     "grid"
                 ],
-                items: albums
+                items: artists
             });
+        }
 
-            self.plex.searchForTracks(musicSectionKey, query.value, limit).then(function(songResults) {
-                var songs = [];
+        self.plex.searchForAlbums(musicSectionKey, uri_query_value, limit).then(function(albumsResults) {
 
-                songResults.forEach(function (song) {
-                    songs.push(self._formatSong(song, "plexamp/track"));
+            if (!(albumsResults.hasOwnProperty("size") && albumsResults.size == 0)) {
+                var albums = [];
+
+                albumsResults.forEach(function (album) {
+                    albums.push(self._formatAlbum(album, "plexamp/allalbums"));
                 });
+
                 answer.push({
-                    title: self.commandRouter.getI18nString('TRACKS'),
-                    icon: 'fa fa-music',
+                    title: self.commandRouter.getI18nString('ALBUMS'),
+                    icon: 'fa fa-play',
                     availableListViews: [
                         "list",
                         "grid"
                     ],
-                    items: songs
+                    items: albums
                 });
+            }
+
+            self.plex.searchForTracks(musicSectionKey, uri_query_value, limit).then(function(songResults) {
+
+                if (!(songResults.hasOwnProperty("size") && songResults.size == 0)) {
+                    var songs = [];
+
+                    songResults.forEach(function (song) {
+                        songs.push(self._formatSong(song, "plexamp/track"));
+                    });
+
+                    answer.push({
+                        title: self.commandRouter.getI18nString('TRACKS'),
+                        icon: 'fa fa-music',
+                        availableListViews: [
+                            "list",
+                            "grid"
+                        ],
+                        items: songs
+                    });
+                }
 
                 // Finally got all the results so resolve the search
                 defer.resolve(answer);
