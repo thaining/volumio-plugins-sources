@@ -6,6 +6,7 @@ class CommandCoreMock {
         this.logger = logger;
         this.sharedVars = new (require('v-conf'))();
         this.sharedVars.set('language_code', 'en');
+        this.jsonData = {};
     }
 }
 
@@ -33,6 +34,18 @@ CommandCoreMock.prototype.getUIConfigOnPlugin = function(service, plugin, data) 
 
     return defer.promise;
 };
+
+CommandCoreMock.prototype.jsonDataExists = function(name) {
+    var self = this;
+
+    return self.jsonData.hasOwnProperty(name);
+}
+
+CommandCoreMock.prototype.getJsonData = function(name) {
+    var self = this;
+
+    return self.jsonData[name];
+}
 
 CommandCoreMock.prototype.getI18nString = function(key) {
 
@@ -102,20 +115,20 @@ CommandCoreMock.prototype.test = function(string) {
 }
 
 // copied from volumio index.js
-CommandCoreMock.prototype.i18nJson = function (dictionaryFile, defaultDictionaryFile, jsonFile) {
+CommandCoreMock.prototype.i18nJson = function (dictionaryFileName, defaultDictionaryFileName, jsonFileName) {
     var self = this;
     var methodDefer = libQ.defer();
     var defers = [];
 
     try {
-        fs.readJsonSync(dictionaryFile);
+        fs.readJsonSync(dictionaryFileName);
     } catch (e) {
-        dictionaryFile = defaultDictionaryFile;
+        dictionaryFileName = defaultDictionaryFileName;
     }
 
-    defers.push(libQ.nfcall(fs.readJson, dictionaryFile));
-    defers.push(libQ.nfcall(fs.readJson, defaultDictionaryFile));
-    defers.push(libQ.nfcall(fs.readJson, jsonFile));
+    defers.push(libQ.nfcall(fs.readJson, dictionaryFileName));
+    defers.push(libQ.nfcall(fs.readJson, defaultDictionaryFileName));
+    defers.push(libQ.nfcall(fs.readJson, jsonFileName));
 
     libQ.all(defers)
         .then(function (documents) {
@@ -125,6 +138,8 @@ CommandCoreMock.prototype.i18nJson = function (dictionaryFile, defaultDictionary
 
             self.i18nTranslate(jsonFile, dictionary, defaultDictionary);
 
+            self.jsonData[jsonFileName] = jsonFile;
+
             methodDefer.resolve(jsonFile);
         })
         .fail(function (err) {
@@ -133,6 +148,15 @@ CommandCoreMock.prototype.i18nJson = function (dictionaryFile, defaultDictionary
 
     return methodDefer.promise;
 };
+
+CommandCoreMock.prototype.executeOnPlugin = function(arg1, arg2, arg3, arg4) {
+
+    if (arg2 == 'network' && arg3 == 'getCachedIPAddresses') {
+        return { "eth0": "127.0.0.1" };
+    }
+
+    return null;
+}
 
 module.exports = CommandCoreMock;
 

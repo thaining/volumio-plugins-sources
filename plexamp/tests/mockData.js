@@ -48,10 +48,10 @@ let plex_cloud_resources = `<?xml version="1.0" encoding="UTF-8"?>
 let plex_local_resources = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer size="3">
   <Device name="TestServer" product="Plex Media Server" productVersion="1.24.3.5033-757abe6b4" platform="FreeBSD" platformVersion="12.2-RELEASE-p7" device="PC" clientIdentifier="c3ecfbec6b2467ce3c7abc102357cbd57cd8785f" createdAt="1532837371" lastSeenAt="1685517219" provides="server" owned="1" accessToken="aaaabbbccccddd" publicAddress="127.0.0.1" httpsRequired="0" synced="0" relay="0" dnsRebindingProtection="0" natLoopbackSupported="0" publicAddressMatches="1" presence="1">
-    <Connection protocol="http" address="127.0.0.1" port="9300" uri="http://127.0.0.1:9300" local="1"/>
+    <Connection protocol="http" address="127.0.0.1" port="LOCAL_PORT_1" uri="http://127.0.0.1:LOCAL_PORT_1" local="1"/>
   </Device>
   <Device name="ec2-192-168-240-22" product="Plex Media Server" productVersion="1.32.1.6999-91e1e2e2c" platform="Linux" platformVersion="6.1.19-30.43.amzn2023.x86_64" device="Docker Container (LinuxServer.io)" clientIdentifier="ce06903388fb95d8895501533558c69513b3bd64" createdAt="1684187144" lastSeenAt="1685526357" provides="server" owned="1" accessToken="aaaabbbccccddd" publicAddress="127.0.0.2" httpsRequired="0" synced="0" relay="1" dnsRebindingProtection="0" natLoopbackSupported="0" publicAddressMatches="0" presence="1">
-    <Connection protocol="http" address="127.0.0.1" port="9301" uri="http://127.0.0.1:9301" local="0"/>
+    <Connection protocol="http" address="127.0.0.1" port="LOCAL_PORT_2" uri="http://127.0.0.1:LOCAL_PORT_2" local="0"/>
     <Connection protocol="http" address="240.0.0.0" port="32400" uri="http://240.0.0.0:32400" local="1"/>
   </Device>
   <Device name="SomebodysMBP.foo.com" product="Plex for Mac" productVersion="1.68.2.3746-7601b337" platform="macos" platformVersion="12.5" device="" clientIdentifier="c4yjok8ysummhpsqqygt6e1i" createdAt="1598980843" lastSeenAt="1685530952" provides="client,player,pubsub-player" owned="1" publicAddress="192.168.35.23" publicAddressMatches="1" presence="1">
@@ -180,6 +180,15 @@ function eval_auth(req, token) {
     return (parsedHeaders['x-plex-token'] == token);
 }
 
+function eval_resource_replace(string, dict) {
+    var string_copy = (' ' + string).slice(1);
+
+    for (const [key, value] of Object.entries(dict)) {
+        string_copy = string_copy.replaceAll(key, value);
+    }
+
+    return string_copy;
+}
 
 const head_resp = {
 
@@ -254,7 +263,8 @@ const get_resp = {
                 },
                 headers: xml_headers,
                 body: function(req) {
-                    return eval_auth(req, config.get('token')) ? plex_local_resources : non_auth_root_resp;
+                    return eval_auth(req, config.get('token')) ?
+                        eval_resource_replace(plex_local_resources, config.get('localPortMap')) : non_auth_root_resp;
                 }
             }
         };

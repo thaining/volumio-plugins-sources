@@ -32,7 +32,11 @@ class Config {
             "timeOut": 600,
             "local": "false",
             "recentAddedLimit": 50,
-            "recentPlayedLimit": 30
+            "recentPlayedLimit": 30,
+            "localPortMap": {
+                "LOCAL_PORT_1": "9300",
+                "LOCAL_PORT_2": "9301"
+            }
         };
     }
     get = (key) => {
@@ -62,7 +66,7 @@ const plexCloudParams = {
 
 var plex_cloud_addresses = [ "192.168.32.65", "172.31.64.184", "192.168.240.22" ];
 
-describe('plex.js tests', function () {
+describe('index.getpinandupdateconfig.js tests', function () {
 
     describe('http ping', function(done) {
         var server = new ServerMock({ host: 'localhost', port: 9000 });
@@ -181,12 +185,6 @@ describe('plex.js tests', function () {
                 });
         }, 5000);
     });
-
-    function eval_auth(req, token) {
-        var parsedHeaders = {};
-        for (var i = 0; i < req.rawHeaders.length; i += 2) { parsedHeaders[req.rawHeaders[i].toLowerCase()] = req.rawHeaders[i+1]; }
-        return (parsedHeaders['x-plex-token'] == token);
-    }
 
     describe('plex cloud', function(done) {
         var plexTvServer = new ServerMock({ host: 'localhost', port: 9200 });
